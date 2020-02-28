@@ -16,20 +16,28 @@
 set -euo pipefail
 [ -n "${DEBUG:-}" ] && set -x
 
-srcdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 export JAVA_HOME="${JAVA_HOME:-/usr}"
 
 export PATH="$PATH:/hadoop/sbin:/hadoop/bin"
 
 if [ $# -gt 0 ]; then
-    exec $@
+    exec "$@"
 else
-    if ! [ -f /root/.ssh/authorized_keys ]; then
-        ssh-keygen -t rsa -b 1024 -f /root/.ssh/id_rsa -N ""
-        cp -v /root/.ssh/{id_rsa.pub,authorized_keys}
-        chmod -v 0400 /root/.ssh/authorized_keys
-    fi
+    for x in root hdfs yarn; do
+        if ! [ -f "$x/.ssh/id_rsa" ]; then
+            su - "$x" <<-EOF
+                [ -n "${DEBUG:-}" ] && set -x
+                ssh-keygen -t rsa -f ~/.ssh/id_rsa -N ""
+EOF
+        fi
+        if ! [ -f "$x/.ssh/authorized_keys" ]; then
+            su - "$x" <<-EOF
+                [ -n "${DEBUG:-}" ] && set -x
+                cp -v ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys
+                chmod -v 0400 ~/.ssh/authorized_keys
+EOF
+        fi
+    done
 
     if ! [ -f /etc/ssh/ssh_host_rsa_key ]; then
         /usr/sbin/sshd-keygen || :
@@ -57,9 +65,9 @@ else
         ssh-keyscan localhost || :
         ssh-keyscan 0.0.0.0   || :
     fi | tee -a /root/.ssh/known_hosts
-    hostname=$(hostname -f)
+    hostname="$(hostname -f)"
     if ! grep -q "$hostname" /root/.ssh/known_hosts; then
-        ssh-keyscan $hostname || :
+        ssh-keyscan "$hostname" || :
     fi | tee -a /root/.ssh/known_hosts
 
     mkdir -pv /hadoop/logs
