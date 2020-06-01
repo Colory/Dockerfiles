@@ -20,7 +20,7 @@ else
 endif
 
 ifndef TAG
-	TAG := $(shell perl -n -e '/^\s*ARG\s+.+_VERSION\s*=\s*"?(\d+\.\d+|latest)"?/ && &{ print $$1; exit }' Dockerfile)
+	TAG := $(shell perl -n -e '/^\s*ARG\s+.+_VERSION\s*=\s*"?(\d+\.\d+|latest)"?/ && &{ print $$1; exit }' Dockerfile 2>/dev/null)
 endif
 
 ifndef REPO
@@ -43,9 +43,9 @@ ifndef NOPORTS
 	NOPORTS :=
 endif
 
-ifndef RUN_ARGS
-	RUN_ARGS := bash
-endif
+#ifndef RUN_ARGS
+#	RUN_ARGS := bash
+#endif
 
 ifdef LATEST
 	TAG=latest
@@ -69,6 +69,42 @@ cloudbuild:
 gcp-cloudbuild:
 	@# replace the prefix with the project ID
 	gcloud builds submit --tag gcr.io/$$GOOGLE_CLOUD_PROJECT/`echo "$(REPO_TAG)" | sed 's,.*/,,'` .
+
+.PHONY: gcp
+gcp: gcp-cloudbuild
+	@:
+
+.PHONY: gcb
+gcb: gcp-cloudbuild
+	@:
+
+.PHONY: azure-container-registry
+azure-container-registry:
+	az acr build --file Dockerfile --registry "$$AZURE_REGISTRY" --image "$(REPO_TAG)" .
+
+.PHONY: azure
+azure: azure-container-registry
+	@:
+
+.PHONY: acr
+acr: azure
+	@:
+
+.PHONY: azure-container-registry-local
+azure-container-registry-local:
+	docker build -t "$$AZURE_REGISTRY.azurecr.io/`echo "$(REPO_TAG)" | sed 's,.*/,,'`" .
+
+.PHONY: azure-local
+azure-local: azure-container-registry-local
+	@:
+
+.PHONY: acr-local
+acr-local: azure-local
+	@:
+
+.PHONY: acr2
+acr2: acr-local
+	@:
 
 .PHONY: nocache
 nocache:
@@ -156,6 +192,11 @@ run-fg: runcmd-fg
 sh:
 	#make -e MAP_PORTS="" run
 	docker run -ti --rm -v $$PWD:/code $(REPO_TAG) sh
+
+.PHONY: bash
+bash:
+	#make -e MAP_PORTS="" run
+	docker run -ti --rm -v $$PWD:/code $(REPO_TAG) bash
 
 .PHONY: test
 test:

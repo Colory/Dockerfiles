@@ -70,7 +70,7 @@ RUN set -eux && \
 # Needed for HBase 2.0+ hbase-shell
 RUN bash -c ' \
     echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    apk add --no-cache jruby jruby-irb add asciidoctor && \
+    apk add --no-cache jruby jruby-irb asciidoctor && \
     echo exit | hbase shell \
     # jruby-maven jruby-minitest jruby-rdoc jruby-rake jruby-testunit
     '
@@ -84,6 +84,6 @@ COPY conf/hbase-site.xml /hbase/conf/
 # Thrift    9090  / 9095
 # HMaster   16000 / 16010
 # RS        16201 / 16301
-EXPOSE 2181 8080 8085 9090 9095 16000 16010 16201 16301
+EXPOSE 2181 8080 8085 9090 9095 16000 16010 16030 16201 16301
 
 ENTRYPOINT ["/entrypoint.sh"]

@@ -11,19 +11,19 @@
 #  https://www.linkedin.com/in/harisekhon
 #
 
-FROM rabbitmq:3.6
+FROM rabbitmq:3.8
 MAINTAINER Hari Sekhon (https://www.linkedin.com/in/harisekhon)
 
-ARG RABBITMQ_VERSION=3.6
+ARG RABBITMQ_VERSION=3.8
 
 LABEL Description="RabbitMQ Cluster" \
       "RabbitMQ Version"="$RABBITMQ_VERSION"
 
 COPY entrypoint.sh /
-COPY rabbitmq-cluster /usr/bin
+COPY rabbitmq-cluster /
 
 EXPOSE 15672
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["rabbitmq-cluster"]
+CMD ["/rabbitmq-cluster"]
